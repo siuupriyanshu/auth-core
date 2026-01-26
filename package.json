@@ -1,0 +1,22 @@
+{
+  "name": "auth-core",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "bun run --watch /src/server.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@types/dotenv": "^8.2.3",
+    "@types/express": "^5.0.6",
+    "@types/mongoose": "^5.11.97",
+    "express": "^5.2.1",
+    "mongoose": "^9.1.5"
+  }
+}
