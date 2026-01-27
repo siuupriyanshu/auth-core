@@ -17,6 +17,7 @@
     "@types/express": "^5.0.6",
     "@types/mongoose": "^5.11.97",
     "express": "^5.2.1",
-    "mongoose": "^9.1.5"
+    "mongoose": "^9.1.5",
+    "zod": "^4.3.6"
   }
 }

@@ -1,6 +1,7 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import { errorHandler, notFound } from './middleware/errorHandler';
+import  authRoutes from './route/authRoute';
 dotenv.config();
 
 const app = express();;
@@ -12,7 +13,7 @@ app.get('/', (req, res) => {
 });
 
 
-
+app.use("/api/auth", authRoutes);
 app.use("/", errorHandler);
 app.use("/", notFound);
 
