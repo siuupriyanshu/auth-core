@@ -16,8 +16,10 @@
     "@types/dotenv": "^8.2.3",
     "@types/express": "^5.0.6",
     "@types/mongoose": "^5.11.97",
+    "@types/nodemailer": "^7.0.9",
     "express": "^5.2.1",
     "mongoose": "^9.1.5",
+    "nodemailer": "^7.0.13",
     "zod": "^4.3.6"
   }
 }

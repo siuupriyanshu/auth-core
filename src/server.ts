@@ -1,5 +1,5 @@
 import app from "./app";
-import { connectDB } from "./config/db";
+import { connectDB } from "./lib/db";
 
 const startServer = async () => {
     const PORT = process.env.PORT || 3000;

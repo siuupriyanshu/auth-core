@@ -1,10 +1,38 @@
-import type { Request, Response, NextFunction } from "express";
+import type { Response, Request, NextFunction } from "express"
 
-export const errorHandler = (err: Error, req: Request, res: Response, next: NextFunction) => {
-    console.error(err.stack);
-    res.status(500).json({ message: 'An unexpected error occurred!' });
-}           
+export class AppError extends Error {
+    statusCode: number;
+    isOperational: boolean;
+
+    constructor(message: string, statusCode: number) {
+        super(message);
+        this.statusCode = statusCode;
+        this.isOperational = true;
+
+        Error.captureStackTrace(this, this.constructor);
+    }
+}
+
+export const errorHandler = (err: Error | AppError, req: Request, res: Response, next: NextFunction) => {
+    if (err instanceof AppError) {
+        console.error({
+            message: err.message,
+            statusCode: err.statusCode,
+            stack: err.stack
+        })
+    }
+
+    console.error('Unexpected error:', err);
+
+    res.status(500).json({
+        success: false,
+        message: 'Internal server error'
+    });
+}
 
 export const notFound = (req: Request, res: Response, next: NextFunction) => {
-    res.status(404).json({ message: 'Resource not found' });
-}
+    res.status(404).json({
+        success: false,
+        message: 'Router not Found'
+    })
+};
