@@ -78,10 +78,10 @@ export class APIError extends Error {
 
 // Auth API endpoints
 export const authAPI = {
-  register: (email: string, password: string, tenantId: string) =>
-    APIClient.post<{ token: string }>('/register', { email, password, tenantId }),
+  register: (userName: string, email: string, password: string) =>
+    APIClient.post<{ token: string }>('/register', { userName, email, password  }),
 
-  login: (email: string, password: string) =>
+  login: (email: string, password: string) => 
     APIClient.post<{ token: string }>('/login', { email, password }),
 
   verifyEmail: (token: string) =>

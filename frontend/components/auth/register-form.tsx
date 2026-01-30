@@ -35,7 +35,7 @@ export const RegisterForm = () => {
     setError(null);
 
     try {
-      const response = await authAPI.register(data.email, data.password, data.tenantId);
+      const response = await authAPI.register(data.email, data.password, data.userName);
       login(response.token);
       setSuccess(true);
       setTimeout(() => {
@@ -86,6 +86,21 @@ export const RegisterForm = () => {
           )}
 
           <div className="space-y-2">
+            <label htmlFor="userName" className="block text-sm font-medium">
+              Username
+            </label>
+            <Input
+              id="userName"
+              placeholder="username"
+              {...register('userName')}
+              disabled={isLoading}
+            />
+            {errors.userName && (
+              <p className="text-xs text-destructive">{errors.userName.message}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
             <label htmlFor="email" className="block text-sm font-medium">
               Email Address
             </label>
@@ -98,21 +113,6 @@ export const RegisterForm = () => {
             />
             {errors.email && (
               <p className="text-xs text-destructive">{errors.email.message}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <label htmlFor="tenantId" className="block text-sm font-medium">
-              Tenant ID / Subdomain
-            </label>
-            <Input
-              id="tenantId"
-              placeholder="my-company"
-              {...register('tenantId')}
-              disabled={isLoading}
-            />
-            {errors.tenantId && (
-              <p className="text-xs text-destructive">{errors.tenantId.message}</p>
             )}
           </div>
 

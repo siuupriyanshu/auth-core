@@ -15,18 +15,18 @@ export const passwordSchema = z
   .regex(/[!@#$%^&*]/, 'Password must contain at least one special character (!@#$%^&*)');
 
 // Tenant ID/subdomain validation
-export const tenantIdSchema = z
+export const userNameSchema = z
   .string()
-  .min(3, 'Tenant ID must be at least 3 characters')
-  .max(50, 'Tenant ID must not exceed 50 characters')
-  .regex(/^[a-z0-9-]+$/, 'Tenant ID can only contain lowercase letters, numbers, and hyphens');
+  .min(3, 'userName must be at least 3 characters')
+  .max(50, 'userName must not exceed 50 characters')
+  .regex(/^[a-z0-9-]+$/, 'userName can only contain lowercase letters, numbers, and hyphens');
 
 // Registration form schema
 export const registerSchema = z.object({
   email: emailSchema,
   password: passwordSchema,
   confirmPassword: z.string(),
-  tenantId: tenantIdSchema,
+  userName: userNameSchema,
   acceptTerms: z.boolean().refine(v => v === true, {
     message: 'You must accept the terms and conditions',
   }),

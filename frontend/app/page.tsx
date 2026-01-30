@@ -19,15 +19,15 @@ export default function HomePage() {
             <div className="flex gap-4">
               {isAuthenticated ? (
                 <Link href="/dashboard">
-                  <Button>Dashboard</Button>
+                  <Button className='cursor-pointer'>Dashboard</Button>
                 </Link>
               ) : (
                 <>
                   <Link href="/login">
-                    <Button variant="outline">Sign In</Button>
+                    <Button variant="outline" className='cursor-pointer'>Sign In</Button>
                   </Link>
                   <Link href="/register">
-                    <Button>Sign Up</Button>
+                    <Button className='cursor-pointer'>Sign Up</Button>
                   </Link>
                 </>
               )}
@@ -47,12 +47,12 @@ export default function HomePage() {
           </p>
           <div className="flex gap-4 justify-center">
             <Link href="/register">
-              <Button size="lg">
+              <Button size="lg" className='cursor-pointer'>
                 Get Started <ArrowRight className="ml-2 w-4 h-4" />
               </Button>
             </Link>
             <Link href="/login">
-              <Button size="lg" variant="outline">
+              <Button size="lg" variant="outline" className='cursor-pointer'>
                 Sign In
               </Button>
             </Link>
@@ -110,7 +110,7 @@ export default function HomePage() {
         </div>
 
         {/* Authentication Flow */}
-        <section className="mb-16">
+        <section>
           <h3 className="text-2xl font-bold text-foreground mb-8">Authentication Flow</h3>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             {[
@@ -119,10 +119,10 @@ export default function HomePage() {
               { number: '3', title: 'Login', desc: 'Authenticate with credentials or OAuth' },
               { number: '4', title: '2FA Verification', desc: 'Confirm identity with authenticator' },
             ].map((step, i) => (
-              <div key={i} className="relative">
-                <Card>
-                  <CardContent className="pt-6">
-                    <div className="flex flex-col items-center text-center">
+              <div key={i} className="relative h-full">
+                <Card className="h-full">
+                  <CardContent className="pt-6 h-full">
+                    <div className="flex flex-col items-center text-center h-full">
                       <div className="w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold mb-4">
                         {step.number}
                       </div>
@@ -140,79 +140,10 @@ export default function HomePage() {
             ))}
           </div>
         </section>
-
-        {/* API Documentation */}
-        <section className="mb-16">
-          <h3 className="text-2xl font-bold text-foreground mb-8">API Integration Points</h3>
-          <Card>
-            <CardHeader>
-              <CardTitle>Backend API Requirements</CardTitle>
-              <CardDescription>
-                This frontend connects to a Node.js/Express backend exposing these endpoints
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {[
-                  { method: 'POST', endpoint: '/api/register', desc: 'User registration' },
-                  { method: 'POST', endpoint: '/api/login', desc: 'User login' },
-                  { method: 'POST', endpoint: '/api/verify-email', desc: 'Verify email address' },
-                  { method: 'POST', endpoint: '/api/forgot-password', desc: 'Request password reset' },
-                  { method: 'POST', endpoint: '/api/reset-password', desc: 'Reset password with token' },
-                  { method: 'POST', endpoint: '/api/2fa/setup', desc: 'Setup two-factor authentication' },
-                  { method: 'POST', endpoint: '/api/2fa/verify', desc: 'Verify 2FA code' },
-                  { method: 'POST', endpoint: '/api/oauth/google/auth-url', desc: 'Get Google OAuth URL' },
-                  { method: 'POST', endpoint: '/api/oauth/google/callback', desc: 'Handle Google callback' },
-                  { method: 'POST', endpoint: '/api/oauth/github/auth-url', desc: 'Get GitHub OAuth URL' },
-                  { method: 'POST', endpoint: '/api/oauth/github/callback', desc: 'Handle GitHub callback' },
-                  { method: 'POST', endpoint: '/api/refresh-token', desc: 'Refresh JWT token' },
-                ].map((api, i) => (
-                  <div key={i} className="flex items-start gap-4 p-3 bg-muted rounded-lg">
-                    <div className="flex-shrink-0">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
-                        {api.method}
-                      </span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-mono font-medium text-foreground">{api.endpoint}</p>
-                      <p className="text-xs text-muted-foreground">{api.desc}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </section>
-
-        {/* Getting Started */}
-        <section>
-          <h3 className="text-2xl font-bold text-foreground mb-8">Getting Started</h3>
-          <Card>
-            <CardContent className="pt-6">
-              <ol className="space-y-4">
-                {[
-                  'Install dependencies: npm install',
-                  'Set NEXT_PUBLIC_API_URL environment variable to your backend API',
-                  'Run the development server: npm run dev',
-                  'Visit http://localhost:3000 and create an account',
-                  'Verify your email and complete 2FA setup',
-                  'Access the dashboard and admin features',
-                ].map((step, i) => (
-                  <li key={i} className="flex gap-4">
-                    <div className="flex-shrink-0">
-                      <CheckCircle2 className="w-5 h-5 text-green-600 dark:text-green-400 mt-0.5" />
-                    </div>
-                    <span className="text-sm text-muted-foreground">{step}</span>
-                  </li>
-                ))}
-              </ol>
-            </CardContent>
-          </Card>
-        </section>
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-border mt-20 bg-muted/50">
+      <footer className="border-t border-border bg-muted/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="text-center text-sm text-muted-foreground">
             <p>Multi-Tenant Authentication System - Built with Next.js and React</p>
