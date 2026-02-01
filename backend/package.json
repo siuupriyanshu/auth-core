@@ -13,10 +13,14 @@
     "typescript": "^5"
   },
   "dependencies": {
+    "@types/bcrypt": "^6.0.0",
+    "@types/cors": "^2.8.19",
     "@types/dotenv": "^8.2.3",
     "@types/express": "^5.0.6",
     "@types/mongoose": "^5.11.97",
     "@types/nodemailer": "^7.0.9",
+    "bcrypt": "^6.0.0",
+    "cors": "^2.8.6",
     "express": "^5.2.1",
     "mongoose": "^9.1.5",
     "nodemailer": "^7.0.13",

@@ -9,9 +9,11 @@ export const validate =
       req.body = schema.parse(req.body);
       next();
     } catch (err: any) {
-      throw new AppError(
-        err.errors?.[0]?.message ?? "Invalid request body",
-        400
+       next(
+        new AppError(
+          err.errors?.[0]?.message ?? "Invalid request body",
+          400
+        )
       );
     }
   };

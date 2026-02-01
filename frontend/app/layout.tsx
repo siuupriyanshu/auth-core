@@ -9,8 +9,8 @@ const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: 'Multi-Tenant Auth | Secure Access Management',
-  description: 'A comprehensive multi-tenant authentication system with JWT, 2FA, OAuth, and RBAC',
+  title: 'Multi-Tenant Auth Service',
+  description: 'Secure authentication for multiple tenants',
   generator: 'v0.app',
   icons: {
     icon: [

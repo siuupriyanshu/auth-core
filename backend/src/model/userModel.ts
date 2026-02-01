@@ -1,13 +1,6 @@
 import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema({
-    username: {
-        type: String,
-        required: true,
-        unique: true,
-        trim: true,
-        minlength: 3,
-    },
     email: {
         type: String,
         required: true,
@@ -19,6 +12,21 @@ const userSchema = new mongoose.Schema({
         type: String,
         required: true,
         minlength: 6,
+    },
+    role: {
+        type: String,
+        enum: ['user', 'admin'],
+        default: 'user',
+    },  
+    isEmailVerified: {
+        type: Boolean,
+        default: false,
+    },
+    emailVerificationToken: {
+        type: String,
+    },  
+    emailVerificationTokenExpires: {
+        type: Date,
     },
     createdAt: {
         type: Date,

@@ -1,105 +1,89 @@
-'use client';
+'use client'
 
-import { useEffect, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { authAPI, APIError } from '@/lib/api-client';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import Link from 'next/link';
-import { AlertCircle, CheckCircle, Mail, Loader2 } from 'lucide-react';
+import { useEffect, useState } from 'react'
+import Link from 'next/link'
+import { useSearchParams, useRouter } from 'next/navigation'
+import { useAuth } from '@/lib/auth-context'
+import { LoadingState } from '@/components/auth/loading-state'
 
 export default function VerifyEmailPage() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
-  const [message, setMessage] = useState('Verifying your email...');
-
-  const token = searchParams.get('token');
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const { verifyEmail } = useAuth()
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState(false)
 
   useEffect(() => {
-    const verifyEmail = async () => {
-      if (token) {
-        try {
-          await authAPI.verifyEmail(token);
-          setStatus('success');
-          setMessage('Your email has been verified successfully!');
-          setTimeout(() => {
-            router.push('/dashboard');
-          }, 2000);
-        } catch (err) {
-          setStatus('error');
-          if (err instanceof APIError) {
-            setMessage(err.message);
-          } else {
-            setMessage('Failed to verify email. The link may have expired.');
-          }
-        }
-      } else {
-        setStatus('loading');
-        setMessage('Check your email for a verification link');
-      }
-    };
+    const token = searchParams.get('token')
 
-    verifyEmail();
-  }, [token, router]);
+    if (!token) {
+      setError('No verification token provided')
+      setLoading(false)
+      return
+    }
+
+    const verify = async () => {
+      try {
+        const email = searchParams.get('email')
+        if (!email) {
+          throw new Error('No email provided for verification')
+        }
+        await verifyEmail(token, email)
+        setSuccess(true)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Verification failed')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    verify()
+  }, [searchParams, verifyEmail])
+
+  if (loading) {
+    return <LoadingState message="Verifying email..." />
+  }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4 py-12">
+    <main className="min-h-screen flex items-center justify-center px-4 py-8 bg-background">
       <div className="w-full max-w-md">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex flex-col items-center gap-4">
-              {status === 'loading' && (
-                <>
-                  <Loader2 className="w-12 h-12 text-primary animate-spin" />
-                  <h2 className="text-xl font-bold text-center">Verifying Email</h2>
-                </>
-              )}
-              {status === 'success' && (
-                <>
-                  <CheckCircle className="w-12 h-12 text-green-500" />
-                  <h2 className="text-xl font-bold text-center">Email Verified</h2>
-                </>
-              )}
-              {status === 'error' && (
-                <>
-                  <AlertCircle className="w-12 h-12 text-destructive" />
-                  <h2 className="text-xl font-bold text-center">Verification Failed</h2>
-                </>
-              )}
-              <p className="text-sm text-muted-foreground text-center">{message}</p>
-              {status === 'error' && (
-                <div className="w-full flex flex-col gap-2">
-                  <Button
-                    onClick={() => router.push('/login')}
-                    className="w-full"
-                  >
-                    Back to Sign In
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => router.push('/register')}
-                    className="w-full"
-                  >
-                    Create New Account
-                  </Button>
-                </div>
-              )}
-              {status === 'loading' && !token && (
-                <div className="w-full space-y-3">
-                  <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                    <Mail className="w-4 h-4 flex-shrink-0" />
-                    Check your email inbox
-                  </div>
-                  <Link href="/login" className="block text-center text-sm text-primary hover:underline">
-                    Back to Sign In
-                  </Link>
-                </div>
-              )}
+        <div className="bg-card border border-border rounded-lg p-8 space-y-6">
+          {success ? (
+            <div className="space-y-4 text-center">
+              <h1 className="text-2xl font-semibold tracking-tight">Email Verified</h1>
+              <p className="text-muted-foreground">
+                Your email has been verified successfully. You can now sign in to your account.
+              </p>
+              <Link
+                href="/login"
+                className="inline-block px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 font-medium"
+              >
+                Continue to Sign In
+              </Link>
             </div>
-          </CardContent>
-        </Card>
+          ) : (
+            <div className="space-y-4 text-center">
+              <h1 className="text-2xl font-semibold tracking-tight">Verification Failed</h1>
+              <p className="text-destructive">{error}</p>
+              <div className="flex flex-col gap-2">
+                <Link
+                  href="/register"
+                  className="inline-block px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 font-medium"
+                >
+                  Try Again
+                </Link>
+                <Link
+                  href="/login"
+                  className="inline-block px-4 py-2 border border-border text-foreground rounded-md hover:bg-muted font-medium"
+                >
+                  Return to Sign In
+                </Link>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
-  );
+    </main>
+  )
 }

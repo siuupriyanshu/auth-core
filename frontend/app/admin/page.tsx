@@ -1,89 +1,87 @@
-import { ProtectedRoute } from '@/lib/protected-route';
-import { DashboardHeader } from '@/components/dashboard/header';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+'use client'
 
-export const metadata = {
-  title: 'Admin Dashboard | Multi-Tenant Auth',
-  description: 'Administration panel for managing users and permissions',
-};
+import { useRouter } from 'next/navigation'
+import { useAuth } from '@/lib/auth-context'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 export default function AdminPage() {
+  const router = useRouter()
+  const { user } = useAuth()
+
   return (
-    <ProtectedRoute requiredRole="admin">
-      <div className="min-h-screen bg-background">
-        <DashboardHeader />
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <section className="mb-8">
-            <h1 className="text-3xl font-bold text-foreground mb-2">Admin Dashboard</h1>
-            <p className="text-muted-foreground">
-              Manage your tenant's users, roles, and permissions
-            </p>
-          </section>
+    <main className="min-h-screen bg-background">
+      <div className="border-b border-border">
+        <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+          <h1 className="text-2xl font-bold tracking-tight">Admin Panel</h1>
+          <Button variant="outline" onClick={() => router.push('/dashboard')}>
+            Back to Dashboard
+          </Button>
+        </div>
+      </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-3xl font-bold">-</p>
-                <p className="text-xs text-muted-foreground mt-2">
-                  Managed through API
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm font-medium">Active Sessions</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-3xl font-bold">-</p>
-                <p className="text-xs text-muted-foreground mt-2">
-                  Real-time data
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm font-medium">Tenant ID</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-lg font-mono text-primary">-</p>
-                <p className="text-xs text-muted-foreground mt-2">
-                  From JWT claims
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-
+      <div className="max-w-6xl mx-auto px-4 py-8">
+        <div className="grid gap-6">
           <Card>
             <CardHeader>
-              <CardTitle>User Management</CardTitle>
-              <CardDescription>
-                User management and role assignment are handled through your backend API.
-                This dashboard displays information from your JWT claims.
-              </CardDescription>
+              <CardTitle>Administrator Information</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="p-4 bg-muted rounded-lg">
-                  <p className="text-sm font-medium text-foreground mb-2">
-                    API Endpoints Needed:
-                  </p>
-                  <ul className="text-sm text-muted-foreground space-y-1">
-                    <li>• GET /api/admin/users - List all users</li>
-                    <li>• POST /api/admin/users/roles - Assign roles</li>
-                    <li>• POST /api/admin/users/permissions - Manage permissions</li>
-                    <li>• DELETE /api/admin/users/:id - Remove users</li>
-                  </ul>
-                </div>
+            <CardContent className="space-y-4">
+              <div>
+                <p className="text-sm text-muted-foreground">Admin Email</p>
+                <p className="text-foreground font-medium">{user?.email}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Admin ID</p>
+                <p className="text-foreground font-medium">{user?.id}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Role</p>
+                <span className="inline-block px-3 py-1 bg-destructive text-destructive-foreground text-sm rounded-full font-medium">
+                  Admin
+                </span>
               </div>
             </CardContent>
           </Card>
-        </main>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Admin Capabilities</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li>✓ User management</li>
+                <li>✓ Role and permission management</li>
+                <li>✓ System configuration</li>
+                <li>✓ Security policies</li>
+                <li>✓ Audit logs</li>
+              </ul>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Quick Actions</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground mb-3">
+                  Admin-only features would be implemented here
+                </p>
+                <Button variant="outline" className="w-full text-left bg-transparent">
+                  Manage Users
+                </Button>
+                <Button variant="outline" className="w-full text-left bg-transparent">
+                  System Settings
+                </Button>
+                <Button variant="outline" className="w-full text-left bg-transparent">
+                  View Audit Log
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
-    </ProtectedRoute>
-  );
+    </main>
+  )
 }

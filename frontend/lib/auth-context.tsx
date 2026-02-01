@@ -1,138 +1,323 @@
-'use client';
+'use client'
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { jwtDecode } from 'jwt-decode';
+import React, { createContext, useCallback, useContext, useEffect, useState } from 'react'
+import { User, AuthContextType, ApiResponse } from './types'
+import { API_ENDPOINTS } from './auth-config'
 
-export interface User {
-  id: string;
-  email: string;
-  role: string;
-  permissions: string[];
-  tenantId: string;
-  verified: boolean;
-  mfaEnabled: boolean;
+const AuthContext = createContext<AuthContextType | undefined>(undefined)
+
+// Token storage key
+const TOKEN_STORAGE_KEY = 'auth_token'
+
+// Token management utilities
+const tokenStorage = {
+  get: (): string | null => {
+    if (typeof window === 'undefined') return null
+    return localStorage.getItem(TOKEN_STORAGE_KEY)
+  },
+  set: (token: string): void => {
+    if (typeof window === 'undefined') return
+    localStorage.setItem(TOKEN_STORAGE_KEY, token)
+  },
+  remove: (): void => {
+    if (typeof window === 'undefined') return
+    localStorage.removeItem(TOKEN_STORAGE_KEY)
+  },
 }
 
-export interface AuthContextType {
-  user: User | null;
-  token: string | null;
-  isLoading: boolean;
-  isAuthenticated: boolean;
-  login: (token: string) => void;
-  logout: () => void;
-  updateUser: (user: User) => void;
-  setLoading: (loading: boolean) => void;
-  refreshToken: () => Promise<void>;
-  hasPermission: (permission: string) => boolean;
-  hasRole: (role: string) => boolean;
-}
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  // Initialize auth state from localStorage
-  useEffect(() => {
-    const initializeAuth = async () => {
-      try {
-        const storedToken = localStorage.getItem('authToken');
-        if (storedToken) {
-          // Check if token is expired
-          const decoded: any = jwtDecode(storedToken);
-          if (decoded.exp * 1000 < Date.now()) {
-            // Token expired, attempt refresh
-            await refreshTokenInternal();
-          } else {
-            setToken(storedToken);
-            setUser(decoded.user);
-          }
-        }
-      } catch (error) {
-        console.error('Auth initialization failed:', error);
-        localStorage.removeItem('authToken');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    initializeAuth();
-  }, []);
-
-  const refreshTokenInternal = async () => {
-    try {
-      const response = await fetch('/api/refresh-token', {
-        method: 'POST',
-        credentials: 'include',
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        localStorage.setItem('authToken', data.token);
-        const decoded: any = jwtDecode(data.token);
-        setToken(data.token);
-        setUser(decoded.user);
-      } else {
-        logout();
-      }
-    } catch (error) {
-      console.error('Token refresh failed:', error);
-      logout();
-    }
-  };
-
-  const login = (newToken: string) => {
-    localStorage.setItem('authToken', newToken);
-    const decoded: any = jwtDecode(newToken);
-    setToken(newToken);
-    setUser(decoded.user);
-  };
-
-  const logout = () => {
-    localStorage.removeItem('authToken');
-    setToken(null);
-    setUser(null);
-  };
-
-  const updateUser = (newUser: User) => {
-    setUser(newUser);
-  };
-
-  const refreshToken = async () => {
-    await refreshTokenInternal();
-  };
-
-  const hasPermission = (permission: string): boolean => {
-    return user?.permissions.includes(permission) ?? false;
-  };
-
-  const hasRole = (role: string): boolean => {
-    return user?.role === role;
-  };
-
-  const value: AuthContextType = {
-    user,
-    token,
-    isLoading,
-    isAuthenticated: !!user && !!token,
-    login,
-    logout,
-    updateUser,
-    setLoading: setIsLoading,
-    refreshToken,
-    hasPermission,
-    hasRole,
-  };
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-};
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within AuthProvider');
+// Helper to create headers with Authorization
+const getAuthHeaders = (includeContentType = true): HeadersInit => {
+  const headers: HeadersInit = {}
+  const token = tokenStorage.get()
+  
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`
   }
-  return context;
-};
+  
+  if (includeContentType) {
+    headers['Content-Type'] = 'application/json'
+  }
+  
+  return headers
+}
+
+// Response type that includes token
+interface AuthResponse {
+  user: User
+  token: string
+}
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<User | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  // Fetch current user on mount using stored token
+  useEffect(() => {
+    const fetchUser = async () => {
+      const token = tokenStorage.get()
+      
+      if (!token) {
+        setLoading(false)
+        return
+      }
+
+      try {
+        const response = await fetch(API_ENDPOINTS.me, {
+          method: 'GET',
+          headers: getAuthHeaders(false),
+        })
+
+        if (response.ok) {
+          const data: ApiResponse<User> = await response.json()
+          if (data.success && data.data) {
+            setUser(data.data)
+          } else {
+            // Token might be invalid, clear it
+            tokenStorage.remove()
+          }
+        } else if (response.status === 401) {
+          // Token expired or invalid
+          tokenStorage.remove()
+          setUser(null)
+        }
+      } catch (err) {
+        console.error('Failed to fetch user:', err)
+        // On network error, don't clear token (might be temporary)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchUser()
+  }, [])
+
+  const login = useCallback(async (email: string, password: string) => {
+    setError(null)
+    try {
+      const response = await fetch(API_ENDPOINTS.login, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      })
+
+      const data: ApiResponse<AuthResponse> = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Login failed')
+      }
+
+      if (data.data) {
+        tokenStorage.set(data.data.token)
+        setUser(data.data.user)
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Login failed'
+      setError(message)
+      throw err
+    }
+  }, [])
+
+  const register = useCallback(async (email: string, password: string) => {
+    setError(null)
+    try {
+      const response = await fetch(API_ENDPOINTS.register, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, confirmPassword: password }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok || data.success === false) {
+  throw new Error(data.error ?? data.message ?? 'Registration failed')
+}
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Registration failed'
+      setError(message)
+      throw err
+    }
+  }, [])
+
+  const logout = useCallback(async () => {
+    setError(null)
+    try {
+      const token = tokenStorage.get()
+      
+      // Optionally notify backend (for token blacklisting if implemented)
+      if (token) {
+        await fetch(API_ENDPOINTS.logout, {
+          method: 'POST',
+          headers: getAuthHeaders(),
+        }).catch(() => {
+          // Ignore errors - we're logging out anyway
+        })
+      }
+      
+      // Always clear local state
+      tokenStorage.remove()
+      setUser(null)
+    } catch (err) {
+      // Even on error, clear local state
+      tokenStorage.remove()
+      setUser(null)
+      const message = err instanceof Error ? err.message : 'Logout failed'
+      setError(message)
+      throw err
+    }
+  }, [])
+
+  const oauthLogin = useCallback(async (provider: 'google' | 'github') => {
+    setError(null)
+    try {
+      const endpoint = provider === 'google' ? API_ENDPOINTS.oauthGoogle : API_ENDPOINTS.oauthGithub
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      })
+
+      const data: ApiResponse<{ redirectUrl: string; token?: string }> = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || `${provider} login failed`)
+      }
+
+      // If token is returned directly (some OAuth flows)
+      if (data.data?.token) {
+        tokenStorage.set(data.data.token)
+      }
+
+      if (data.data?.redirectUrl) {
+        window.location.href = data.data.redirectUrl
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : `${provider} login failed`
+      setError(message)
+      throw err
+    }
+  }, [])
+
+  const verifyEmail = useCallback(async (token: string, email: string) => {
+    setError(null)
+    try {
+      const response = await fetch(API_ENDPOINTS.verifyEmail, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, email }),
+      })
+
+      const data: ApiResponse<AuthResponse> = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Email verification failed')
+      }
+
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Email verification failed'
+      setError(message)
+      throw err
+    }
+  }, [])
+
+  const forgotPassword = useCallback(async (email: string) => {
+    setError(null)
+    try {
+      const response = await fetch(API_ENDPOINTS.forgotPassword, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      })
+
+      const data: ApiResponse<unknown> = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Request failed')
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Forgot password request failed'
+      setError(message)
+      throw err
+    }
+  }, [])
+
+  const resetPassword = useCallback(async (token: string, password: string) => {
+    setError(null)
+    try {
+      const response = await fetch(API_ENDPOINTS.resetPassword, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, password }),
+      })
+
+      const data: ApiResponse<unknown> = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Reset failed')
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Password reset failed'
+      setError(message)
+      throw err
+    }
+  }, [])
+
+  const submitOtp = useCallback(async (otp: string) => {
+    setError(null)
+    try {
+      const response = await fetch(API_ENDPOINTS.submitOtp, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ otp }),
+      })
+
+      const data: ApiResponse<AuthResponse> = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || '2FA verification failed')
+      }
+
+      if (data.data) {
+        tokenStorage.set(data.data.token)
+        setUser(data.data.user)
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : '2FA verification failed'
+      setError(message)
+      throw err
+    }
+  }, [])
+
+  const clearError = useCallback(() => setError(null), [])
+
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        loading,
+        error,
+        login,
+        register,
+        logout,
+        oauthLogin,
+        verifyEmail,
+        forgotPassword,
+        resetPassword,
+        submitOtp,
+        clearError,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  )
+}
+
+export function useAuth() {
+  const context = useContext(AuthContext)
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider')
+  }
+  return context
+}
+
+// Export token utilities for use in other parts of the app (e.g., API clients)
+export { tokenStorage, getAuthHeaders }

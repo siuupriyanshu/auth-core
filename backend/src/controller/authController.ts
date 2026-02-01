@@ -3,65 +3,110 @@ import type { NextFunction, Request, Response } from 'express';
 import crypto from 'crypto';
 import { sendVerificationEmail } from '../lib/mailer';
 import { config } from '../config/config';
+import bcrypt from 'bcrypt';
 
 export const login = async (req: Request, res: Response, next: NextFunction) => {
- try {
-      const { email, password } = req.body;
-      const existingUser = await User.findOne({ email });
-      if (!existingUser) {
-        return res.status(404).json({ message: 'User not found' });
-      }
-      if (existingUser.password !== password) {
-        return res.status(401).json({ message: 'Invalid credentials' });
-      }
-      res.status(200).json({ message: 'Login successful', user: existingUser });
- } catch (error) {
-   next(error);
- }
+  try {
+    const { email, password } = req.body;
+    const existingUser = await User.findOne({ email });
+    if (!existingUser) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    if (existingUser.password !== password) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+    res.status(200).json({ message: 'Login successful', user: existingUser });
+  } catch (error) {
+    next(error);
+  }
 }
 
 export const register = async (req: Request, res: Response, next: NextFunction) => {
   try {
-      const { username, email, password } = req.body;
+    const { email, password } = req.body;
 
-      const existingUser = await User.findOne({ email });
-      if (existingUser) {
-        return res.status(400).json({ message: 'User already exists' });
-      }
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ success: false, message: 'User already exists' });
+    }
 
-      const verificationToken = crypto.randomBytes(32).toString('hex');
-      const tokenHash = crypto.createHash('sha256').update(verificationToken).digest('hex');
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    const tokenHash = crypto.createHash('sha256').update(verificationToken).digest('hex');
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const newUser = new User({
+      email,
+      password: hashedPassword,
+      isEmailVerified: false,
+      emailVerificationToken: tokenHash,
+      emailVerificationTokenExpires: new Date(Date.now() + 24 * 60 * 60 * 1000)
+    });
+
+    await newUser.save();
 
 
-
-      const newUser = new User({
-         username, 
-         email, 
-         password, 
-         emailVerificationToken: tokenHash, 
-         emailVerificationTokenExpires: new Date(Date.now() + 24 * 60 * 60 * 1000) 
-        });
-         
-        await sendVerificationEmail({
-          to: email,
-          name: username,
-          verificationLink: `${config.PORT}/verify-email?token=${verificationToken}&email=${email}`,
-        })
-      await newUser.save();
-      res.status(201).json({ message: 'User registered successfully', user: newUser });
-  } catch(error) {
-    next(error);  
+    await sendVerificationEmail({
+      to: email,
+      subject: 'Verify you email',
+      verificationLink: `${config.APP_URL}/verify-email?token=${verificationToken}&email=${email}`,
+    })
+    res.status(201).json({
+      success: true,
+      data: null,
+      message: 'Registration successful. Check your email to verify.',
+    });
+  } catch (error) {
+    next(error);
   }
 }
 
+export const verifyEmail = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { token, email } = req.body;
+
+    const tokenHash = crypto
+      .createHash('sha256')
+      .update(token)
+      .digest('hex');
+
+    const user = await User.findOne({
+      email,
+      emailVerificationToken: tokenHash,
+      emailVerificationTokenExpires: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid or expired token',
+      });
+    }
+
+    user.isEmailVerified = true;
+    user.emailVerificationToken = undefined;
+    user.emailVerificationTokenExpires = undefined;
+
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      data: null,
+      message: 'Email verified successfully',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const me = async (req: Request, res: Response, next: NextFunction) => {
   try {
-      const userId = req.params.id;
-      const user = await User.findById(userId);
-      if (!user) {
-        return res.status(404).json({ message: 'User not found' });
-      }
-      res.status(200).json({ user });
+    const userId = req.params.id;
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    res.status(200).json({ user });
   } catch (error) {
     next(error);
   }
