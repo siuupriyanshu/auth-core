@@ -29,15 +29,15 @@ const tokenStorage = {
 const getAuthHeaders = (includeContentType = true): HeadersInit => {
   const headers: HeadersInit = {}
   const token = tokenStorage.get()
-  
+
   if (token) {
     headers['Authorization'] = `Bearer ${token}`
   }
-  
+
   if (includeContentType) {
     headers['Content-Type'] = 'application/json'
   }
-  
+
   return headers
 }
 
@@ -56,7 +56,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const fetchUser = async () => {
       const token = tokenStorage.get()
-      
+
       if (!token) {
         setLoading(false)
         return
@@ -101,15 +101,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         body: JSON.stringify({ email, password }),
       })
 
-      const data: ApiResponse<AuthResponse> = await response.json()
+      const data = await response.json()
 
       if (!response.ok) {
         throw new Error(data.error || 'Login failed')
       }
 
       if (data.data) {
-        tokenStorage.set(data.data.token)
-        setUser(data.data.user)
+        const { user, token } = data.data as AuthResponse
+        tokenStorage.set(token);
+        if (typeof document !== 'undefined') {
+          document.cookie = `auth-token=${token}; path=/;`
+        }
+        setUser(user);
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Login failed'
@@ -130,8 +134,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const data = await response.json()
 
       if (!response.ok || data.success === false) {
-  throw new Error(data.error ?? data.message ?? 'Registration failed')
-}
+        throw new Error(data.error ?? data.message ?? 'Registration failed')
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Registration failed'
       setError(message)
@@ -143,7 +147,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setError(null)
     try {
       const token = tokenStorage.get()
-      
+
       // Optionally notify backend (for token blacklisting if implemented)
       if (token) {
         await fetch(API_ENDPOINTS.logout, {
@@ -153,7 +157,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           // Ignore errors - we're logging out anyway
         })
       }
-      
+
       // Always clear local state
       tokenStorage.remove()
       setUser(null)
