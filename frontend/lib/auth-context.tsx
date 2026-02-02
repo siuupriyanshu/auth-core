@@ -111,7 +111,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const { user, token } = data.data as AuthResponse
         tokenStorage.set(token);
         if (typeof document !== 'undefined') {
-          document.cookie = `auth-token=${token}; path=/;`
+          const isHttps = window.location.protocol === 'https:'
+          document.cookie = `auth-token=${token}; Path=/; Max-Age=604800; SameSite=Lax${isHttps ? '; Secure' : ''}`
         }
         setUser(user);
       }
@@ -160,6 +161,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // Always clear local state
       tokenStorage.remove()
+     if (typeof document !== 'undefined') {
+        document.cookie = 'auth-token=; Path=/; Max-Age=0; SameSite=Lax'
+      }
       setUser(null)
     } catch (err) {
       // Even on error, clear local state

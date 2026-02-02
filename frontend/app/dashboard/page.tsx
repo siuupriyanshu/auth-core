@@ -9,6 +9,7 @@ export default function DashboardPage() {
   const router = useRouter()
   const { user, logout } = useAuth()
 
+
   const handleLogout = async () => {
     try {
       await logout()
@@ -53,7 +54,7 @@ export default function DashboardPage() {
               <div>
                 <p className="text-sm text-muted-foreground">Email Verified</p>
                 <p className="text-foreground font-medium">
-                  {user?.emailVerified ? 'Yes' : 'No'}
+                  {user?.isEmailVerified ? 'Yes' : 'No'}
                 </p>
               </div>
             </CardContent>

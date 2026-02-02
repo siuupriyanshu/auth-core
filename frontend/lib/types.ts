@@ -4,7 +4,7 @@ export interface User {
   roles: string[]
   permissions: string[]
   createdAt: string
-  emailVerified: boolean
+  isEmailVerified: boolean
 }
 
 export interface AuthContextType {

@@ -117,13 +117,25 @@ export const verifyEmail = async (req: Request, res: Response, next: NextFunctio
 
 export const me = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const userId = req.params.id;
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+    const auth = req.headers.authorization || ''
+    const token = auth.startsWith('Bearer ') ? auth.slice(7) : null
+
+    if (!token) {
+      return res.status(401).json({ success: false, message: 'Unauthorized' })
     }
-    res.status(200).json({ user });
+
+    const payload = jwt.verify(token, process.env.JWT_SECRET as string) as { sub: string }
+    const user = await User.findById(payload.sub).select('_id email roles')
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' })
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: { id: user._id, email: user.email, roles: user.role },
+    })
   } catch (error) {
-    next(error);
+    return res.status(401).json({ success: false, message: 'Unauthorized' })
   }
-}   
+}
