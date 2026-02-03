@@ -14,7 +14,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   useEffect(() => {
     if (!loading && !user) {
       router.push('/login')
-    } else if (!loading && user && !user.roles?.includes('admin')) {
+    } else if (!loading && user && !user.role?.includes('admin')) {
       router.push('/unauthorized')
     }
   }, [user, loading, router])
@@ -23,7 +23,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     return <LoadingState message="Loading..." />
   }
 
-  if (!user || !user.roles?.includes('admin')) {
+  if (!user || !user.role?.includes('admin')) {
     return null
   }
 

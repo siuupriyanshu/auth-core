@@ -68,8 +68,8 @@ export default function DashboardPage() {
               <div>
                 <p className="text-sm text-muted-foreground mb-2">Roles</p>
                 <div className="flex flex-wrap gap-2">
-                  {user?.roles && user.roles.length > 0 ? (
-                    user.roles.map((role) => (
+                  {user?.role && user.role.length > 0 ? (
+                    user.role.map((role) => (
                       <span
                         key={role}
                         className="px-3 py-1 bg-primary text-primary-foreground text-sm rounded-full font-medium"
@@ -102,7 +102,7 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
 
-          {user?.roles?.includes('admin') && (
+          {user?.role?.includes('admin') && (
             <div className="flex">
               <Button onClick={() => router.push('/admin')} variant="default">
                 Go to Admin Panel

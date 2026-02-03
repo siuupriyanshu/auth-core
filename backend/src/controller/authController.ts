@@ -125,7 +125,7 @@ export const me = async (req: Request, res: Response, next: NextFunction) => {
     }
 
     const payload = jwt.verify(token, process.env.JWT_SECRET as string) as { sub: string }
-    const user = await User.findById(payload.sub).select('_id email roles')
+    const user = await User.findById(payload.sub).select('_id email role isEmailVerified createdAt')
 
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' })
@@ -133,9 +133,81 @@ export const me = async (req: Request, res: Response, next: NextFunction) => {
 
     return res.status(200).json({
       success: true,
-      data: { id: user._id, email: user.email, roles: user.role },
+      data: { id: user._id, email: user.email, roles: user.role, isEmailVerified: user.isEmailVerified, createdAt: user.createdAt },
     })
   } catch (error) {
     return res.status(401).json({ success: false, message: 'Unauthorized' })
+  }
+}
+
+export const resetPassword = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { token, email, password } = req.body;
+
+    const tokenHash = crypto
+      .createHash('sha256')
+      .update(token)
+      .digest('hex');
+
+    const user = await User.findOne({
+      email,
+      passwordResetToken: tokenHash,
+      passwordResetTokenExpires: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid or expired token',
+      });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    user.password = hashedPassword;
+    user.passwordResetToken = undefined;
+    user.passwordResetTokenExpires = undefined;
+
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      data: null,
+      message: 'Password reset successfully',
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export const forgotPassword = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { email } = req.body;
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const tokenHash = crypto.createHash('sha256').update(resetToken).digest('hex');
+
+    user.passwordResetToken = tokenHash;
+    user.passwordResetTokenExpires = new Date(Date.now() + 1 * 60 * 60 * 1000); // 1 hour
+
+    await user.save();
+
+    await sendVerificationEmail({
+      to: email,
+      subject: 'Password Reset',
+      verificationLink: `${config.APP_URL}/reset-password?token=${resetToken}&email=${email}`,
+    });
+
+    res.status(200).json({
+      success: true,
+      data: null,
+      message: 'Password reset email sent',
+    });
+  } catch (error) {
+    next(error);
   }
 }

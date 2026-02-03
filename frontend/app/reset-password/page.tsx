@@ -34,11 +34,11 @@ export default function ResetPasswordPage() {
       setFormError('Invalid reset link')
       return
     }
-
+   const email = searchParams.get('email') || '';
     setFormError(null)
     setFormLoading(true)
     try {
-      await resetPassword(token, data.password)
+      await resetPassword(email, token, data.password)
       setSuccess(true)
     } catch (err) {
       setFormError(err instanceof Error ? err.message : 'Password reset failed')

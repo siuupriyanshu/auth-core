@@ -248,13 +248,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
-  const resetPassword = useCallback(async (token: string, password: string) => {
+  const resetPassword = useCallback(async (email: string, token: string, password: string) => {
     setError(null)
     try {
       const response = await fetch(API_ENDPOINTS.resetPassword, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, password }),
+        body: JSON.stringify({ email, token, password }),
       })
 
       const data: ApiResponse<unknown> = await response.json()

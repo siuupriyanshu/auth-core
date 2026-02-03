@@ -28,6 +28,12 @@ const userSchema = new mongoose.Schema({
     emailVerificationTokenExpires: {
         type: Date,
     },
+    passwordResetToken: {
+        type: String,
+    },
+    passwordResetTokenExpires: {
+        type: Date,
+    },
     createdAt: {
         type: Date,
         default: Date.now,

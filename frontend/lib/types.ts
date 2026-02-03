@@ -1,7 +1,7 @@
 export interface User {
   id: string
   email: string
-  roles: string[]
+  role: string[]
   permissions: string[]
   createdAt: string
   isEmailVerified: boolean
@@ -17,7 +17,7 @@ export interface AuthContextType {
   oauthLogin: (provider: 'google' | 'github') => Promise<void>
   verifyEmail: (token: string, email: string) => Promise<void>
   forgotPassword: (email: string) => Promise<void>
-  resetPassword: (token: string, password: string) => Promise<void>
+  resetPassword: (email: string,token: string, password: string) => Promise<void>
   submitOtp: (otp: string) => Promise<void>
   clearError: () => void
 }
