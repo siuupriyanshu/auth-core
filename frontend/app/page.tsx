@@ -18,6 +18,8 @@ export default function HomePage() {
     )
   }
 
+  console.log("user role", user?.role);
+
   return (
     <main className="min-h-screen bg-background">
       <div className="border-b border-border">
